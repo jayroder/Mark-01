@@ -1,11 +1,11 @@
 import React, { useMemo } from 'react';
 import { useMindMapStore } from '../store/useMindMapStore';
-import { calculateLayout, NODE_GAP_Y } from '../utils/layout';
+import { calculateLayout, NODE_GAP_Y, NODE_HEIGHT } from '../utils/layout';
 import { MindMapNode } from './MindMapNode';
 import { ConnectionLayer } from './ConnectionLayer';
 import { DropZone } from './DropZone';
 import { useMindMapInteraction } from '../hooks/useMindMapInteraction';
-import { DndContext, type DragEndEvent, DragOverlay, useSensor, useSensors, PointerSensor } from '@dnd-kit/core';
+import { DndContext, type DragEndEvent, DragOverlay, useSensor, useSensors, PointerSensor, pointerWithin } from '@dnd-kit/core';
 import type { Node } from '../types';
 
 export const MindMapCanvas: React.FC = () => {
@@ -71,10 +71,17 @@ export const MindMapCanvas: React.FC = () => {
 
             sortedChildren.forEach((child, index) => {
                 // Zone Before Child (index)
-                let y = child.y - NODE_GAP_Y / 2;
+                // Default: Top of child - Gap/2
+                let y = child.y - (child.height || NODE_HEIGHT) / 2 - NODE_GAP_Y / 2;
+
                 if (index > 0) {
                     const prev = sortedChildren[index - 1];
-                    y = (prev.y + child.y) / 2;
+                    // Center of GAP between prev and child
+                    // Gap Start = prev.y + prev.h/2
+                    // Gap End = child.y - child.h/2
+                    const prevBottom = prev.y + (prev.height || NODE_HEIGHT) / 2;
+                    const childTop = child.y - (child.height || NODE_HEIGHT) / 2;
+                    y = (prevBottom + childTop) / 2;
                 }
 
                 zones.push(
@@ -91,13 +98,14 @@ export const MindMapCanvas: React.FC = () => {
             // Zone After Last Child
             if (sortedChildren.length > 0) {
                 const last = sortedChildren[sortedChildren.length - 1];
+                const lastBottom = last.y + (last.height || NODE_HEIGHT) / 2;
                 zones.push(
                     <DropZone
                         key={`dz-${parentId}-${sortedChildren.length}`}
                         parentId={parentId}
                         index={sortedChildren.length}
                         x={last.x}
-                        y={last.y + NODE_GAP_Y / 2}
+                        y={lastBottom + NODE_GAP_Y / 2}
                     />
                 );
             }
@@ -106,7 +114,7 @@ export const MindMapCanvas: React.FC = () => {
     };
 
     return (
-        <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+        <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragEnd={handleDragEnd}>
             <div
                 className="w-full h-full bg-slate-50 relative overflow-auto cursor-default touch-none"
                 onClick={handleCanvasClick}

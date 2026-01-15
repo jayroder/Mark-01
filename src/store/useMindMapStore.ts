@@ -236,4 +236,19 @@ export const useMindMapStore = create<MindMapState>((set) => ({
             return { nodes: newNodes };
         });
     },
+
+    updateNodeSize: (id, width, height) => {
+        set((state) => {
+            const node = state.nodes[id];
+            if (node && (node.width !== width || node.height !== height)) {
+                return {
+                    nodes: {
+                        ...state.nodes,
+                        [id]: { ...node, width, height },
+                    },
+                };
+            }
+            return state;
+        });
+    },
 }));

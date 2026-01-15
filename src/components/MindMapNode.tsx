@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useLayoutEffect } from 'react';
 import type { Node } from '../types';
 import { cn } from '../utils/cn';
 import { useMindMapStore } from '../store/useMindMapStore';
@@ -46,6 +46,29 @@ export const MindMapNode: React.FC<MindMapNodeProps> = ({ node }) => {
             adjustHeight();
         }
     }, [isEditing]);
+
+    // Redundant check to ensure size is captured on text change/mount
+    useLayoutEffect(() => {
+        if (nodeRef.current) {
+            const rect = nodeRef.current.getBoundingClientRect();
+            useMindMapStore.getState().updateNodeSize(node.id, rect.width, rect.height);
+        }
+    }, [node.text, node.isExpanded]);
+
+    useEffect(() => {
+        if (!nodeRef.current) return;
+
+        const observer = new ResizeObserver((entries) => {
+            for (const entry of entries) {
+                const { width, height } = entry.contentRect;
+                const rect = entry.target.getBoundingClientRect();
+                useMindMapStore.getState().updateNodeSize(node.id, rect.width, rect.height);
+            }
+        });
+
+        observer.observe(nodeRef.current);
+        return () => observer.disconnect();
+    }, [node.id]);
 
     const handleClick = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -99,6 +122,7 @@ export const MindMapNode: React.FC<MindMapNodeProps> = ({ node }) => {
         top: node.y,
         transform: transform ? CSS.Translate.toString(transform) + ' translate(-50%, -50%)' : 'translate(-50%, -50%)',
         zIndex: isDragging ? 50 : (isSelected ? 40 : 10),
+        maxWidth: 600,
     };
 
     return (
@@ -108,8 +132,8 @@ export const MindMapNode: React.FC<MindMapNodeProps> = ({ node }) => {
             {...listeners}
             {...attributes}
             className={cn(
-                "flex items-center justify-center p-3 rounded-lg border-2 transition-colors duration-200 cursor-pointer shadow-sm touch-none",
-                "min-w-[150px] max-w-[300px]",
+                "flex items-center justify-center p-3 py-1.5 rounded-lg border-2 transition-colors duration-200 cursor-pointer shadow-sm touch-none",
+                "min-w-[250px] max-w-[600px]",
                 node.parentId === null
                     ? "bg-primary text-primary-foreground border-primary text-center font-bold text-lg rounded-xl shadow-lg"
                     : "bg-white text-gray-800 border-gray-200 hover:border-blue-300",
@@ -136,7 +160,7 @@ export const MindMapNode: React.FC<MindMapNodeProps> = ({ node }) => {
                     rows={1}
                 />
             ) : (
-                <span className="whitespace-pre-wrap break-words w-full pointer-events-none select-none">
+                <span className="whitespace-pre-wrap break-all min-w-0 w-full pointer-events-none select-none">
                     {node.text}
                 </span>
             )}

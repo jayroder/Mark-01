@@ -26,5 +26,6 @@ export interface MindMapState {
     updateNodeText: (id: NodeId, text: string) => void;
     selectNode: (id: NodeId | null) => void;
     setEditingNode: (id: NodeId | null) => void;
-    moveNode: (draggedId: NodeId, targetId: NodeId, position: 'child' | 'sibling') => void;
+    moveNode: (draggedId: NodeId, targetId: NodeId, position: 'child' | 'sibling', index?: number) => void;
+    updateNodeSize: (id: NodeId, width: number, height: number) => void;
 }

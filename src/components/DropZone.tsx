@@ -25,7 +25,7 @@ export const DropZone: React.FC<DropZoneProps> = ({ parentId, index, x, y }) => 
         <div
             ref={setNodeRef}
             className={cn(
-                "absolute h-6 w-40 -translate-x-1/2 rounded transition-all pointer-events-auto z-10",
+                "absolute h-3 w-40 -translate-x-1/2 rounded transition-all pointer-events-auto z-10",
                 // When dragging over, show a clear Line indicator
                 isOver ? "bg-green-500 scale-y-50 opacity-100 shadow-xl ring-2 ring-green-300" : "bg-transparent opacity-0"
             )}
